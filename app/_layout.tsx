@@ -3,6 +3,7 @@ import { useColorScheme, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { Provider as PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { Provider as ReduxProvider } from 'react-redux';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { store } from '../store/store';
 import { darkTheme, lightTheme } from '../theme/theme';
 import useCachedResources from '../hooks/useCachedResources';
@@ -276,20 +277,22 @@ export default function RootLayout() {
   }
 
   return (
-    <ReduxProvider store={store}>
-      <ErrorBoundary>
-        <AuthProvider>
-          <PaperProvider theme={theme}>
-            <LayoutProvider>
-              <EducationProvider>
-                <OnboardingProvider>
-                  <RootLayoutNav />
-                </OnboardingProvider>
-              </EducationProvider>
-            </LayoutProvider>
-          </PaperProvider>
-        </AuthProvider>
-      </ErrorBoundary>
-    </ReduxProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ReduxProvider store={store}>
+        <ErrorBoundary>
+          <AuthProvider>
+            <PaperProvider theme={theme}>
+              <LayoutProvider>
+                <EducationProvider>
+                  <OnboardingProvider>
+                    <RootLayoutNav />
+                  </OnboardingProvider>
+                </EducationProvider>
+              </LayoutProvider>
+            </PaperProvider>
+          </AuthProvider>
+        </ErrorBoundary>
+      </ReduxProvider>
+    </GestureHandlerRootView>
   );
 }

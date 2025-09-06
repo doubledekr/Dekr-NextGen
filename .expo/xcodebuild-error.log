@@ -1,0 +1,10 @@
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:98FD23C9-B3BF-4F2E-85F4-7498B180E40A, OS:17.5, name:iPhone 15 Pro }
+{ platform:iOS Simulator, arch:x86_64, id:98FD23C9-B3BF-4F2E-85F4-7498B180E40A, OS:17.5, name:iPhone 15 Pro }
+** BUILD FAILED **
+
+
+The following build commands failed:
+	PhaseScriptExecution [CP-User]\ Generate\ Specs /Users/mavedaxwell/Library/Developer/Xcode/DerivedData/Dekr-ehunlvswlncnuzcjaggtucyniyni/Build/Intermediates.noindex/Pods.build/Debug-iphonesimulator/ReactCodegen.build/Script-46EB2E00072FA0.sh (in target 'ReactCodegen' from project 'Pods')
+	Building workspace Dekr with scheme Dekr and configuration Debug
+(2 failures)

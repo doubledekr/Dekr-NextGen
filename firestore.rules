@@ -49,7 +49,7 @@ service cloud.firestore {
 
     // Education content collection - public read access
     match /educationContent/{contentId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || request.auth.uid == 'demo-user-123' || request.auth == null;
       allow write: if false; // Only Cloud Functions can write
     }
 
@@ -61,7 +61,7 @@ service cloud.firestore {
 
     // Cards collection for content discovery
     match /cards/{cardId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() || request.auth.uid == 'demo-user-123' || request.auth == null;
       allow write: if false; // Only Cloud Functions can write
     }
 

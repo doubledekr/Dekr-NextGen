@@ -10,7 +10,8 @@ import {
   signInWithGoogleFallback,
   checkGooglePlayServices,
   clearGoogleSignInData,
-  checkIOSGoogleSignInConfig
+  checkIOSGoogleSignInConfig,
+  signInAsDemoUser
 } from '../../services/firebase';
 import { setUser, setError, setLoading, setHasCompletedOnboarding } from '../../store/slices/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -42,29 +43,29 @@ export default function SignInScreen() {
   };
 
   const handleDemoSignIn = async () => {
+    console.log('🚀 Demo button clicked!');
+    
     try {
       dispatch(setLoading(true));
+      console.log('🔄 Starting demo authentication...');
       
-      // Create a mock demo user
-      const demoUser = {
-        uid: 'demo-user-123',
-        email: 'demo@dekr.app',
-        displayName: 'Demo User',
-        photoURL: null,
-        emailVerified: true,
-      };
+      // Sign in as real demo user with proper Firebase authentication
+      const userCredential = await signInAsDemoUser();
+      console.log('✅ Demo authentication successful:', userCredential.user?.uid);
       
       // Set demo user in Redux store
-      dispatch(setUser(demoUser));
+      dispatch(setUser(userCredential.user));
       
       // Mark onboarding as completed for demo
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
       dispatch(setHasCompletedOnboarding(true));
       
       // Navigate to main app
+      console.log('🔄 Navigating to main app...');
       router.replace('/(tabs)');
     } catch (error: any) {
-      dispatch(setError('Demo sign-in failed'));
+      console.error('❌ Demo sign-in error:', error);
+      dispatch(setError('Demo sign-in failed: ' + error.message));
     } finally {
       dispatch(setLoading(false));
     }

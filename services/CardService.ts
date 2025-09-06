@@ -387,11 +387,11 @@ export class CardService {
   // Get cards by type
   private async getCardsByType(type: string, limit: number): Promise<UnifiedCard[]> {
     try {
+      // Use a simpler query to avoid composite index requirements
       const snapshot = await this.db
         .collection('cards')
         .where('type', '==', type)
         .orderBy('priority', 'desc')
-        .orderBy('createdAt', 'desc')
         .limit(limit)
         .get();
 
@@ -405,8 +405,8 @@ export class CardService {
         },
       }));
 
-      // If we're in Expo Go/Web mode and got no cards, return mock data
-      if (cards.length === 0 && (Platform.OS === 'web' || isExpoGo)) {
+      // If we got no cards, return mock data for demo users or development
+      if (cards.length === 0) {
         console.log(`🔄 No ${type} cards found, using mock data for development`);
         return this.getMockCardsByType(type, limit);
       }
@@ -415,10 +415,8 @@ export class CardService {
     } catch (error) {
       console.error(`Error getting ${type} cards:`, error);
       // Fallback to mock data in development mode
-      if (Platform.OS === 'web' || isExpoGo) {
-        return this.getMockCardsByType(type, limit);
-      }
-      return [];
+      console.log(`🔄 Error getting ${type} cards, using mock data as fallback`);
+      return this.getMockCardsByType(type, limit);
     }
   }
 

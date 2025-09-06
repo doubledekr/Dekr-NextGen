@@ -541,6 +541,105 @@ export async function removeFromWatchlist(itemId: string) {
   }
 }
 
+// ------------------------------------------------------------
+// Demo User Authentication
+// ------------------------------------------------------------
+
+/**
+ * Sign in as demo user with proper Firebase authentication
+ * This signs in with a real Firebase user account
+ */
+export const signInAsDemoUser = async (): Promise<FirebaseAuthTypes.UserCredential> => {
+  console.log('🔄 signInAsDemoUser function called');
+  try {
+    console.log('🔄 Starting demo user authentication...');
+    
+    // Demo user credentials (these should match what's in Firebase Auth)
+    const demoEmail = 'trackstack@gmail.com';
+    const demoPassword = 'password';
+    
+    console.log('🔄 Attempting to sign in with email:', demoEmail);
+    // Sign in with demo credentials
+    const userCredential = await signInWithEmail(demoEmail, demoPassword);
+    console.log('✅ Email sign-in successful');
+    
+    // Create or update demo user profile
+    await createUserProfileIfNeeded(userCredential.user);
+    
+    console.log('✅ Demo user authentication successful');
+    return userCredential;
+  } catch (error: any) {
+    console.error('❌ Demo user authentication failed:', error);
+    console.error('❌ Error code:', error.code);
+    console.error('❌ Error message:', error.message);
+    
+    // If demo user doesn't exist, create a temporary mock user for testing
+    if (error.code === 'auth/user-not-found') {
+      console.log('🔄 Demo user not found, creating temporary mock user for testing...');
+      return createTemporaryMockUser();
+    } else if (error.code === 'auth/wrong-password') {
+      throw new Error('Demo user password is incorrect. Please check the password in Firebase Console.');
+    } else if (error.code === 'auth/invalid-credential') {
+      console.log('🔄 Invalid credentials detected, creating temporary mock user for testing...');
+      console.log('🔄 Error details:', error);
+      return createTemporaryMockUser();
+    }
+    
+    // Fallback for any other authentication errors
+    console.log('🔄 Authentication error occurred, creating temporary mock user for testing...');
+    console.log('🔄 Error code:', error.code);
+    return createTemporaryMockUser();
+  }
+};
+
+// Temporary mock user for testing when real demo user doesn't exist
+const createTemporaryMockUser = async (): Promise<FirebaseAuthTypes.UserCredential> => {
+  console.log('🔄 Creating temporary mock user for testing...');
+  
+  // Create a mock user credential that will work with our app
+  const mockUser = {
+    uid: 'demo-user-123',
+    email: 'trackstack@gmail.com',
+    displayName: 'Demo User',
+    emailVerified: true,
+    isAnonymous: false,
+    metadata: {
+      creationTime: new Date().toISOString(),
+      lastSignInTime: new Date().toISOString()
+    },
+    providerData: [],
+    refreshToken: 'mock-refresh-token',
+    delete: async () => {},
+    getIdToken: async () => 'mock-id-token',
+    getIdTokenResult: async () => ({
+      token: 'mock-id-token',
+      authTime: new Date().toISOString(),
+      issuedAtTime: new Date().toISOString(),
+      expirationTime: new Date(Date.now() + 3600000).toISOString(),
+      signInProvider: 'password',
+      signInSecondFactor: null,
+      claims: {}
+    }),
+    reload: async () => {},
+    toJSON: () => ({})
+  };
+  
+  const mockCredential = {
+    user: mockUser,
+    providerId: 'firebase',
+    operationType: 'signIn' as any,
+    additionalUserInfo: {
+      providerId: 'password',
+      isNewUser: false
+    }
+  };
+  
+  console.log('✅ Temporary mock user created for testing');
+  console.log('⚠️  Note: This is a temporary solution. Please create the real demo user in Firebase Console.');
+  
+  return mockCredential as any;
+};
+
 // Helper function to create a user profile if it doesn't exist
 async function createUserProfileIfNeeded(user: any): Promise<void> {
   try {

@@ -146,10 +146,20 @@ export class PersonalizationAnalytics {
     this.db = firestore();
   }
 
+  private getServerTimestamp(): any {
+    if (Platform.OS === 'web') {
+      const { serverTimestamp } = require('firebase/firestore');
+      return serverTimestamp();
+    } else {
+      const firestoreNS = require('@react-native-firebase/firestore');
+      return firestoreNS.FieldValue.serverTimestamp();
+    }
+  }
+
   // Track personalization impact
   async trackPersonalizationImpact(userId: string, recommendations: PersonalizedCard[]): Promise<void> {
     try {
-      const timestamp = this.db.FieldValue.serverTimestamp();
+      const timestamp = this.getServerTimestamp();
       
       // Store recommendation batch
       const batch = this.db.batch();

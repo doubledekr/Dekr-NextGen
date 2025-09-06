@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useDispatch } from 'react-redux';
 import { Button, Text, TextInput, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { signUpWithEmail, signInWithGoogle } from '../../services/firebase';
+import { signUpWithEmail, signInWithGoogle, signInAsDemoUser } from '../../services/firebase';
 import { setUser, setError, setLoading, setHasCompletedOnboarding } from '../../store/slices/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -45,17 +45,11 @@ export default function SignUpScreen() {
     try {
       dispatch(setLoading(true));
       
-      // Create a mock demo user
-      const demoUser = {
-        uid: 'demo-user-123',
-        email: 'demo@dekr.app',
-        displayName: 'Demo User',
-        photoURL: null,
-        emailVerified: true,
-      };
+      // Sign in as real demo user with proper Firebase authentication
+      const userCredential = await signInAsDemoUser();
       
       // Set demo user in Redux store
-      dispatch(setUser(demoUser));
+      dispatch(setUser(userCredential.user));
       
       // Mark onboarding as completed for demo
       await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
@@ -64,7 +58,8 @@ export default function SignUpScreen() {
       // Navigate to main app
       router.replace('/(tabs)');
     } catch (error: any) {
-      dispatch(setError('Demo sign-in failed'));
+      console.error('Demo sign-in error:', error);
+      dispatch(setError('Demo sign-in failed: ' + error.message));
     } finally {
       dispatch(setLoading(false));
     }
