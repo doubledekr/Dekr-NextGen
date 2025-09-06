@@ -13,7 +13,6 @@ import {
   Text,
   Card,
   Button,
-  FAB,
   Icon,
   Title,
   Paragraph,
@@ -33,8 +32,6 @@ export default function NewsletterScreen() {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [currentNewsletter, setCurrentNewsletter] = useState<Newsletter | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isGeneratingPodcast, setIsGeneratingPodcast] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [currentPodcastUrl, setCurrentPodcastUrl] = useState<string | null>(null);
 
@@ -65,63 +62,7 @@ export default function NewsletterScreen() {
     setRefreshing(false);
   };
 
-  const generateNewNewsletter = async () => {
-    if (!user) {
-      Alert.alert('Error', 'You must be logged in to generate newsletters');
-      return;
-    }
 
-    try {
-      setIsGenerating(true);
-      safeHapticImpact();
-      
-      const newNewsletter = await newsletterService.generateWeeklyNewsletter();
-      await loadNewsletters(); // Refresh the list
-      
-      Alert.alert('Success', 'Newsletter generated successfully!');
-    } catch (error) {
-      console.error('Error generating newsletter:', error);
-      Alert.alert('Error', 'Failed to generate newsletter');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const generatePodcastNewsletter = async () => {
-    console.log('🎙️ Generate podcast button clicked!');
-    console.log('👤 User:', user);
-    console.log('🔑 User ID:', user?.uid);
-    
-    if (!user) {
-      console.log('❌ No user found, showing error alert');
-      Alert.alert('Error', 'You must be logged in to generate podcast newsletters');
-      return;
-    }
-
-    try {
-      console.log('🚀 Starting podcast generation for user:', user.uid);
-      setIsGeneratingPodcast(true);
-      safeHapticImpact();
-      
-      console.log('📧 Calling newsletterService.generateWeeklyPodcastNewsletter...');
-      const result = await newsletterService.generateWeeklyPodcastNewsletter(user.uid);
-      console.log('✅ Podcast generation result:', result);
-      
-      setCurrentPodcastUrl(result.podcastUrl || null);
-      await loadNewsletters(); // Refresh the list
-      
-      if (result.podcastUrl) {
-        Alert.alert('Success', 'Podcast newsletter generated successfully! Check the audio player below.');
-      } else {
-        Alert.alert('Success', 'Newsletter generated successfully! (Podcast generation failed)');
-      }
-    } catch (error) {
-      console.error('Error generating podcast newsletter:', error);
-      Alert.alert('Error', `Failed to generate podcast newsletter: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsGeneratingPodcast(false);
-    }
-  };
 
   const shareNewsletter = async (newsletter: Newsletter) => {
     try {
@@ -391,31 +332,6 @@ export default function NewsletterScreen() {
         )}
       </ScrollView>
 
-      {/* Generate buttons */}
-      {user ? (
-        <View style={styles.fabContainer}>
-          <FAB
-            icon="microphone"
-            style={[styles.fab, styles.podcastFab, { backgroundColor: theme.colors.secondary }]}
-            onPress={() => {
-              console.log('🎯 FAB button pressed!');
-              generatePodcastNewsletter();
-            }}
-            loading={isGeneratingPodcast}
-            disabled={isGeneratingPodcast || isGenerating}
-            label="Generate Podcast"
-            size="small"
-          />
-          <FAB
-            icon="plus"
-            style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-            onPress={generateNewNewsletter}
-            loading={isGenerating}
-            disabled={isGenerating || isGeneratingPodcast}
-            label="Generate Newsletter"
-          />
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -544,19 +460,6 @@ const styles = StyleSheet.create({
   previousNewsletterStats: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-  },
-  fabContainer: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    flexDirection: 'column',
-    gap: 12,
-  },
-  fab: {
-    alignSelf: 'flex-end',
-  },
-  podcastFab: {
-    marginBottom: 0,
   },
   podcastHeader: {
     flexDirection: 'row',

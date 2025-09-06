@@ -1412,26 +1412,38 @@ export class PersonalizationEngine {
   // Helper methods
   private async getBaseCards(limit: number): Promise<UnifiedCard[]> {
     try {
-      const snapshot = await this.db
-        .collection('cards')
-        .orderBy('priority', 'desc')
-        .orderBy('createdAt', 'desc')
-        .limit(limit)
-        .get();
+      // Use CardService instead of direct Firestore queries to get proper fallback behavior
+      const { CardService } = require('./CardService');
+      const cardService = new CardService();
+      
+      // Get a mix of different card types (podcasts generated separately)
+      const lessonLimit = Math.ceil(limit * 0.5);
+      const stockLimit = Math.ceil(limit * 0.35);
+      const newsLimit = Math.ceil(limit * 0.15);
 
-      return snapshot.docs.map((doc: any) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        metadata: {
-          ...doc.data().metadata,
-          endDate: doc.data().metadata?.endDate?.toDate(),
-        },
-      }));
+      const [lessonCards, stockCards, newsCards] = await Promise.all([
+        cardService.getCardsByType('lesson', lessonLimit),
+        cardService.getCardsByType('stock', stockLimit),
+        cardService.getCardsByType('news', newsLimit),
+      ]);
+
+      // Combine and shuffle cards
+      const allCards = [...lessonCards, ...stockCards, ...newsCards];
+      return this.shuffleArray(allCards).slice(0, limit);
     } catch (error) {
       console.error('Error getting base cards:', error);
       return [];
     }
+  }
+
+  // Helper method to shuffle array
+  private shuffleArray<T>(array: T[]): T[] {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   }
 
   private async applyPersonalizationLogic(

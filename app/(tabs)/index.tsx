@@ -9,7 +9,6 @@ import { RootState } from '../../store/store';
 import { addToWatchlist, setWatchlistItems, removeFromWatchlist } from '../../store/slices/watchlistSlice';
 import { saveToWatchlist, loadWatchlist } from '../../services/firebase-platform';
 import { safeHapticImpact, safeHapticNotification } from '../../utils/haptics';
-import { DeckScrollView } from '../../components/DeckScrollView';
 import { cardService, UnifiedCard as UnifiedCardType } from '../../services/CardService';
 import { PersonalizedCard } from '../../services/PersonalizationEngine';
 import { personalizationAnalytics } from '../../services/PersonalizationAnalytics';
@@ -136,7 +135,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isFetchingRef = useRef(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const [activeDeck, setActiveDeck] = useState<'stocks' | 'crypto' | 'discover' | 'watchlist'>('discover');
   
   // Add cache state
   const [cardCache, setCardCache] = useState<CardCache>({
@@ -310,41 +308,22 @@ export default function HomeScreen() {
   // Check if we need more cards
   useEffect(() => {
     if (user && cards.length < 5 && !isFetchingRef.current) {
-      loadMoreCards(activeDeck);
+      loadMoreCards('discover');
     }
-  }, [cards.length, user, activeDeck]);
+  }, [cards.length, user]);
 
   // Pull to refresh handler
   const handleRefresh = useCallback(() => {
     if (!isFetchingRef.current) {
-      loadMoreCards(activeDeck, true);
+      loadMoreCards('discover', true);
     }
-  }, [activeDeck, loadMoreCards]);
+  }, [loadMoreCards]);
 
-  // activeDeck state is now declared at the top of the component
 
-  // Update the handleDeckSelect function
-  const handleDeckSelect = (deckType: 'stocks' | 'crypto' | 'discover' | 'watchlist') => {
-    if (!user) {
-      router.push('/');
-      return;
-    }
-    setActiveDeck(deckType);
-    loadMoreCards(deckType);
-  };
 
   const handleSwipeRight = async (cardIndex: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const card = cards[cardIndex];
-
-    if (activeDeck === 'watchlist') {
-      // In watchlist, just move card to back
-      setCards(prev => {
-        const remainingCards = prev.filter((_, index) => index !== cardIndex);
-        return [...remainingCards, card];
-      });
-      return;
-    }
   
     if (user) {
       try {
@@ -687,13 +666,6 @@ export default function HomeScreen() {
           }}
         />
       </View>
-      <View style={styles.decksContainer}>
-        <DeckScrollView 
-          onDeckSelect={handleDeckSelect} 
-          activeDeck={activeDeck}
-          isLoading={isLoading}
-        />
-      </View>
 
       <FAB
         icon="chat"
@@ -736,15 +708,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   swiperContainer: {
-    flex: 0.8,
+    flex: 1,
     position: 'relative',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-  decksContainer: {
-    flex: 0.2,
-    justifyContent: 'flex-end',
-    paddingBottom: 20,
+    justifyContent: 'center',
   },
   loadingContainer: {
     flex: 1,

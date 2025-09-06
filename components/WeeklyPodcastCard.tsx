@@ -8,7 +8,6 @@ import {
 import {
   Text,
   Card,
-  Button,
   Icon,
   Title,
   Paragraph,
@@ -17,7 +16,6 @@ import {
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { weeklyPodcastService, WeeklyPodcastData } from '../services/WeeklyPodcastService';
-import { safeHapticImpact } from '../utils/haptics';
 
 interface WeeklyPodcastCardProps {
   onPlay?: (audioUrl: string) => void;
@@ -27,7 +25,6 @@ export const WeeklyPodcastCard: React.FC<WeeklyPodcastCardProps> = ({ onPlay }) 
   const theme = useTheme();
   const [weeklyPodcast, setWeeklyPodcast] = useState<WeeklyPodcastData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     loadWeeklyPodcast();
@@ -50,22 +47,6 @@ export const WeeklyPodcastCard: React.FC<WeeklyPodcastCardProps> = ({ onPlay }) 
     }
   };
 
-  const generateWeeklyPodcast = async () => {
-    try {
-      setIsGenerating(true);
-      safeHapticImpact();
-      
-      const podcast = await weeklyPodcastService.generateWeeklyPodcast();
-      setWeeklyPodcast(podcast);
-      
-      Alert.alert('Success', 'Weekly community podcast generated successfully!');
-    } catch (error) {
-      console.error('Error generating weekly podcast:', error);
-      Alert.alert('Error', 'Failed to generate weekly podcast');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const formatDate = (timestamp: any): string => {
     if (!timestamp) return 'Unknown date';
@@ -147,44 +128,6 @@ export const WeeklyPodcastCard: React.FC<WeeklyPodcastCardProps> = ({ onPlay }) 
             </View>
           </View>
           
-          <Button
-            mode="contained"
-            onPress={generateWeeklyPodcast}
-            loading={isGenerating}
-            disabled={isGenerating}
-            icon="microphone"
-            style={styles.generateButton}
-          >
-            Generate This Week's Podcast
-          </Button>
-          
-          <Button
-            mode="outlined"
-            onPress={async () => {
-              try {
-                setIsGenerating(true);
-                safeHapticImpact();
-                
-                // Import and run the real podcast generation
-                const { generateRealWeeklyPodcast } = await import('../scripts/generate-real-podcast.js');
-                const podcast = await generateRealWeeklyPodcast();
-                
-                Alert.alert('Success', 'Real weekly podcast generated successfully! Check the app for the new podcast.');
-                await loadWeeklyPodcast(); // Refresh the list
-              } catch (error) {
-                console.error('Error generating real podcast:', error);
-                Alert.alert('Error', 'Failed to generate real podcast');
-              } finally {
-                setIsGenerating(false);
-              }
-            }}
-            loading={isGenerating}
-            disabled={isGenerating}
-            icon="rocket-launch"
-            style={[styles.generateButton, { marginTop: 8 }]}
-          >
-            Generate Real Podcast (APIs)
-          </Button>
         </Card.Content>
       </Card>
     );

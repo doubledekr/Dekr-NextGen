@@ -637,6 +637,9 @@ const createTemporaryMockUser = async (): Promise<FirebaseAuthTypes.UserCredenti
   console.log('✅ Temporary mock user created for testing');
   console.log('⚠️  Note: This is a temporary solution. Please create the real demo user in Firebase Console.');
   
+  // Skip profile creation for mock user to avoid Firestore errors
+  console.log('🔄 Skipping profile creation for mock user');
+  
   return mockCredential as any;
 };
 

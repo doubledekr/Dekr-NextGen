@@ -65,7 +65,10 @@ export default function SignInScreen() {
       router.replace('/(tabs)');
     } catch (error: any) {
       console.error('❌ Demo sign-in error:', error);
-      dispatch(setError('Demo sign-in failed: ' + error.message));
+      // Don't show error if it's a mock user fallback
+      if (!error.message.includes('temporary mock user')) {
+        dispatch(setError('Demo sign-in failed: ' + error.message));
+      }
     } finally {
       dispatch(setLoading(false));
     }

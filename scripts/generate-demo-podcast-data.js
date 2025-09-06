@@ -1,29 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Script to generate a demo weekly podcast using the autocontent system
- * This creates a real podcast with intro music and saves it to Firestore
+ * Script to generate demo weekly podcast data using the autocontent system
+ * This creates the podcast data structure without writing to Firestore
  */
-
-const { initializeApp } = require('firebase/app');
-const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
-const { getFirestore, collection, addDoc, serverTimestamp, doc, set } = require('firebase/firestore');
-
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyBsOes01Lnp2leFMN_qJbk-_X6nZIlHvBU",
-  authDomain: "dekr-nextgen.firebaseapp.com",
-  projectId: "dekr-nextgen",
-  storageBucket: "dekr-nextgen.appspot.com",
-  messagingSenderId: "152969284019",
-  appId: "1:152969284019:web:8c2a1d6a7d6a48c52623c6",
-  measurementId: "G-4TB90WRQ97"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 // AutoContent API configuration
 const AUTOCONTENT_API_KEY = process.env.EXPO_PUBLIC_AUTOCONTENT_API_KEY;
@@ -209,79 +189,14 @@ async function mixAudioWithIntro(introMusic, voiceAudioUrl) {
   }
 }
 
-// Create podcast card in Firestore
-async function createPodcastCard(podcastData) {
+// Main function to generate demo weekly podcast data
+async function generateDemoWeeklyPodcastData() {
   try {
-    console.log('💾 Creating podcast card in Firestore...');
-    
-    const { doc, setDoc } = require('firebase/firestore');
-    
-    const cardData = {
-      id: `podcast_${podcastData.id}`,
-      type: 'podcast',
-      title: podcastData.title,
-      description: podcastData.description,
-      contentUrl: podcastData.audioUrl,
-      imageUrl: podcastData.thumbnailUrl,
-      metadata: {
-        weekNumber: podcastData.weekOf,
-      },
-      createdAt: serverTimestamp(),
-      priority: 90, // High priority for weekly podcasts
-      tags: ['weekly', 'community', 'podcast', 'market-update'],
-      engagement: {
-        views: 0,
-        saves: 0,
-        shares: 0
-      }
-    };
-
-    // Add to cards collection
-    const cardRef = await addDoc(collection(db, 'cards'), cardData);
-    console.log('✅ Podcast card created:', cardRef.id);
-
-    // Also add to communityPodcasts collection
-    const podcastRef = doc(db, 'communityPodcasts', podcastData.id);
-    await setDoc(podcastRef, podcastData);
-    console.log('✅ Podcast document created:', podcastData.id);
-
-    return cardRef.id;
-  } catch (error) {
-    console.error('❌ Error creating podcast card:', error);
-    throw error;
-  }
-}
-
-// Main function to generate demo weekly podcast
-async function generateDemoWeeklyPodcast() {
-  try {
-    console.log('🎙️ Starting demo weekly podcast generation...');
-    console.log('');
-
-    // Authenticate as demo user
-    console.log('🔐 Authenticating as demo user...');
-    const demoEmail = 'trackstack@gmail.com';
-    const demoPassword = 'password';
-    
-    const userCredential = await signInWithEmailAndPassword(auth, demoEmail, demoPassword);
-    console.log('✅ Authenticated as:', userCredential.user.email);
+    console.log('🎙️ Starting demo weekly podcast data generation...');
     console.log('');
 
     const { weekOf } = getCurrentWeek();
     console.log('📅 Generating podcast for week:', weekOf);
-    console.log('');
-
-    // Check if podcast already exists
-    console.log('🔍 Checking for existing podcast...');
-    const { doc, getDoc } = require('firebase/firestore');
-    const existingPodcastRef = doc(db, 'communityPodcasts', `weekly_podcast_${weekOf}`);
-    const existingPodcastQuery = await getDoc(existingPodcastRef);
-    if (existingPodcastQuery.exists()) {
-      console.log('✅ Weekly podcast already exists for this week');
-      const existingData = existingPodcastQuery.data();
-      console.log('📋 Existing podcast:', existingData.title);
-      return;
-    }
     console.log('');
 
     // Step 1: Generate script
@@ -309,7 +224,7 @@ async function generateDemoWeeklyPodcast() {
     console.log('🔗 Final Audio URL:', finalAudioUrl);
     console.log('');
 
-    // Step 5: Create podcast data
+    // Step 5: Create podcast data structure
     const podcastData = {
       id: `weekly_podcast_${weekOf}`,
       title: `Dekr Weekly Community Podcast - ${weekOf}`,
@@ -347,29 +262,54 @@ async function generateDemoWeeklyPodcast() {
           }
         ]
       },
-      createdAt: serverTimestamp(),
+      createdAt: new Date().toISOString(),
       duration: Math.floor(script.split(' ').length / 200) * 60, // Estimated duration in seconds
       tags: ['weekly', 'community', 'podcast', 'market-update', 'autocontent']
     };
 
-    // Step 6: Create podcast card and document
-    console.log('💾 Step 5: Creating podcast in Firestore...');
-    const cardId = await createPodcastCard(podcastData);
-    console.log('✅ Podcast created successfully!');
-    console.log('');
+    // Step 6: Create podcast card data structure
+    const podcastCardData = {
+      id: `podcast_${podcastData.id}`,
+      type: 'podcast',
+      title: podcastData.title,
+      description: podcastData.description,
+      contentUrl: podcastData.audioUrl,
+      imageUrl: podcastData.thumbnailUrl,
+      metadata: {
+        weekNumber: podcastData.weekOf,
+      },
+      createdAt: new Date().toISOString(),
+      priority: 90, // High priority for weekly podcasts
+      tags: ['weekly', 'community', 'podcast', 'market-update'],
+      engagement: {
+        views: 0,
+        saves: 0,
+        shares: 0
+      }
+    };
 
-    console.log('🎉 Demo weekly podcast generation completed!');
+    console.log('🎉 Demo weekly podcast data generation completed!');
+    console.log('');
+    console.log('📋 Podcast Data Structure:');
+    console.log('========================');
+    console.log(JSON.stringify(podcastData, null, 2));
+    console.log('');
+    console.log('📋 Podcast Card Data Structure:');
+    console.log('===============================');
+    console.log(JSON.stringify(podcastCardData, null, 2));
+    console.log('');
     console.log('📋 Summary:');
     console.log(`   Week: ${weekOf}`);
     console.log(`   Title: ${podcastData.title}`);
     console.log(`   Duration: ${Math.floor(podcastData.duration / 60)} minutes`);
     console.log(`   Audio URL: ${finalAudioUrl}`);
-    console.log(`   Card ID: ${cardId}`);
+    console.log(`   Script Length: ${script.length} characters`);
+    console.log(`   Word Count: ${script.split(' ').length} words`);
     console.log('');
-    console.log('📱 The podcast should now appear in the app feed!');
+    console.log('📱 This data structure can be used to create the podcast in Firestore when permissions are fixed!');
 
   } catch (error) {
-    console.error('❌ Error generating demo weekly podcast:', error);
+    console.error('❌ Error generating demo weekly podcast data:', error);
     console.error('Error details:', error.message);
   } finally {
     process.exit(0);
@@ -377,4 +317,4 @@ async function generateDemoWeeklyPodcast() {
 }
 
 // Run the script
-generateDemoWeeklyPodcast();
+generateDemoWeeklyPodcastData();

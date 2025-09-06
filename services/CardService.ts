@@ -362,21 +362,19 @@ export class CardService {
     try {
       const cardsRef = this.db.collection('cards');
       
-      // Get cards with simple distribution: 40% lessons, 30% stocks, 20% news, 10% podcasts
-      const lessonLimit = Math.ceil(limit * 0.4);
-      const stockLimit = Math.ceil(limit * 0.3);
-      const newsLimit = Math.ceil(limit * 0.2);
-      const podcastLimit = Math.ceil(limit * 0.1);
+      // Get cards with simple distribution: 50% lessons, 35% stocks, 15% news (podcasts generated separately)
+      const lessonLimit = Math.ceil(limit * 0.5);
+      const stockLimit = Math.ceil(limit * 0.35);
+      const newsLimit = Math.ceil(limit * 0.15);
 
-      const [lessonCards, stockCards, newsCards, podcastCards] = await Promise.all([
+      const [lessonCards, stockCards, newsCards] = await Promise.all([
         this.getCardsByType('lesson', lessonLimit),
         this.getCardsByType('stock', stockLimit),
         this.getCardsByType('news', newsLimit),
-        this.getCardsByType('podcast', podcastLimit),
       ]);
 
       // Combine and shuffle cards
-      const allCards = [...lessonCards, ...stockCards, ...newsCards, ...podcastCards];
+      const allCards = [...lessonCards, ...stockCards, ...newsCards];
       return this.shuffleArray(allCards).slice(0, limit);
     } catch (error) {
       console.error('Error getting default feed:', error);
@@ -385,7 +383,7 @@ export class CardService {
   }
 
   // Get cards by type
-  private async getCardsByType(type: string, limit: number): Promise<UnifiedCard[]> {
+  async getCardsByType(type: string, limit: number): Promise<UnifiedCard[]> {
     try {
       // Use a simpler query to avoid composite index requirements
       const snapshot = await this.db
@@ -420,10 +418,101 @@ export class CardService {
     }
   }
 
-  // Get mock cards for development/testing
-  private getMockCardsByType(type: string, limit: number): UnifiedCard[] {
-    const mockCards: { [key: string]: UnifiedCard[] } = {
-      lesson: [
+  // Get lesson cards for education section
+  async getLessonCards(limit: number = 50): Promise<UnifiedCard[]> {
+    try {
+      // First try to get from Firestore
+      const snapshot = await this.db
+        .collection('cards')
+        .where('type', '==', 'lesson')
+        .orderBy('priority', 'desc')
+        .limit(limit)
+        .get();
+
+      const cards = snapshot.docs.map((doc: any) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+        metadata: {
+          ...doc.data().metadata,
+          endDate: doc.data().metadata?.endDate?.toDate(),
+        },
+      }));
+
+      // If we got no cards, return real lesson cards from JSON
+      if (cards.length === 0) {
+        console.log('🔄 No lesson cards found in Firestore, using real lesson data from JSON');
+        return this.getRealLessonCards(limit);
+      }
+
+      return cards;
+    } catch (error) {
+      console.error('Error getting lesson cards:', error);
+      // Fallback to real lesson cards from JSON
+      console.log('🔄 Error getting lesson cards from Firestore, using real lesson data from JSON');
+      return this.getRealLessonCards(limit);
+    }
+  }
+
+  // Get real lesson cards from lessons.json
+  private getRealLessonCards(limit: number): UnifiedCard[] {
+    try {
+      const lessonsData = require('../data/lessons.json');
+      const lessonCards: UnifiedCard[] = [];
+      
+      for (const stage of lessonsData) {
+        for (const lesson of stage.lessons) {
+          if (lessonCards.length >= limit) break;
+          
+          // Find audio content
+          const audioContent = lesson.content.find((c: any) => c.type === 'audio');
+          const quizContent = lesson.content.find((c: any) => c.type === 'multiple-choice');
+          
+          // Create lesson card
+          const lessonCard: UnifiedCard = {
+            id: `lesson-${stage.id}-${lesson.id}`,
+            type: 'lesson',
+            title: lesson.title,
+            description: lesson.description,
+            contentUrl: audioContent?.audioUrl || undefined,
+            imageUrl: this.getLessonImageUrl(stage.id, lesson.id),
+            metadata: {
+              stage: stage.id,
+              difficulty: this.getDifficultyFromStage(stage.id),
+              duration: lesson.duration,
+              xpReward: lesson.xpReward,
+              hasAudio: !!audioContent,
+              hasQuiz: !!quizContent,
+              audioDuration: audioContent?.audioDuration || 0,
+              transcript: audioContent?.transcript || undefined,
+              quiz: quizContent ? {
+                question: quizContent.question?.questionText || '',
+                options: quizContent.question?.options || [],
+                correctAnswer: quizContent.question?.correctAnswer || '',
+                explanation: quizContent.question?.explanation || ''
+              } : undefined
+            },
+            createdAt: new Date(),
+            priority: this.calculateLessonPriority(stage.id, lesson.id),
+            tags: this.generateLessonTags(stage.id, lesson),
+            engagement: {
+              views: 0,
+              saves: 0,
+              shares: 0
+            }
+          };
+          
+          lessonCards.push(lessonCard);
+        }
+        if (lessonCards.length >= limit) break;
+      }
+      
+      console.log(`📚 Generated ${lessonCards.length} real lesson cards from lessons.json`);
+      return lessonCards;
+    } catch (error) {
+      console.error('❌ Error loading real lesson cards:', error);
+      // Fallback to basic mock lessons
+      return [
         {
           id: 'lesson-1',
           type: 'lesson',
@@ -439,40 +528,14 @@ export class CardService {
           priority: 90,
           tags: ['stocks', 'beginner', 'education'],
           engagement: { views: 1250, saves: 89, shares: 23 }
-        },
-        {
-          id: 'lesson-2',
-          type: 'lesson',
-          title: 'Understanding Market Volatility',
-          description: 'Explore what causes market volatility and how to navigate uncertain market conditions.',
-          contentUrl: undefined,
-          imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=400',
-          metadata: {
-            stage: 2,
-            difficulty: 'intermediate',
-          },
-          createdAt: new Date(Date.now() - 86400000), // 1 day ago
-          priority: 85,
-          tags: ['volatility', 'intermediate', 'market-analysis'],
-          engagement: { views: 980, saves: 67, shares: 18 }
-        },
-        {
-          id: 'lesson-3',
-          type: 'lesson',
-          title: 'Technical Analysis Fundamentals',
-          description: 'Master the basics of reading charts, identifying trends, and using technical indicators.',
-          contentUrl: undefined,
-          imageUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=400',
-          metadata: {
-            stage: 3,
-            difficulty: 'intermediate',
-          },
-          createdAt: new Date(Date.now() - 172800000), // 2 days ago
-          priority: 80,
-          tags: ['technical-analysis', 'charts', 'indicators'],
-          engagement: { views: 756, saves: 45, shares: 12 }
         }
-      ],
+      ];
+    }
+  }
+
+  // Get mock cards for development/testing
+  private getMockCardsByType(type: string, limit: number): UnifiedCard[] {
+    const mockCards: { [key: string]: UnifiedCard[] } = {
       stock: [
         {
           id: 'stock-1',
@@ -564,38 +627,7 @@ export class CardService {
           engagement: { views: 1950, saves: 123, shares: 34 }
         }
       ],
-      podcast: [
-        {
-          id: 'podcast-1',
-          type: 'podcast',
-          title: 'Weekly Market Outlook',
-          description: 'This week\'s analysis of market trends, economic indicators, and investment opportunities.',
-          contentUrl: 'https://example.com/podcast-weekly-outlook.mp3',
-          imageUrl: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=400',
-          metadata: {
-            weekNumber: 'Week 45',
-          },
-          createdAt: new Date(),
-          priority: 85,
-          tags: ['market-analysis', 'weekly', 'podcast'],
-          engagement: { views: 1450, saves: 98, shares: 25 }
-        },
-        {
-          id: 'podcast-2',
-          type: 'podcast',
-          title: 'Investment Strategies for Beginners',
-          description: 'Expert advice on building a solid investment portfolio from the ground up.',
-          contentUrl: 'https://example.com/podcast-beginner-strategies.mp3',
-          imageUrl: 'https://images.unsplash.com/photo-1559526324-c1f6730c2c44?w=400',
-          metadata: {
-            weekNumber: 'Week 44',
-          },
-          createdAt: new Date(Date.now() - 604800000), // 1 week ago
-          priority: 78,
-          tags: ['investment', 'beginner', 'strategies'],
-          engagement: { views: 1230, saves: 87, shares: 19 }
-        }
-      ],
+      podcast: [], // Mock podcasts removed - using real weekly podcast generation
       crypto: [
         {
           id: 'crypto-1',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,11 +7,13 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { Text, useTheme, Card } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useEducation } from '../../contexts/EducationContext';
+import { cardService, UnifiedCard as UnifiedCardType } from '../../services/CardService';
+import { UnifiedCard } from '../../components/UnifiedCard';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +21,25 @@ export default function EducationScreen() {
   const { user, stages, loading } = useEducation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const [lessonCards, setLessonCards] = useState<UnifiedCardType[]>([]);
+  const [loadingLessonCards, setLoadingLessonCards] = useState(true);
+
+  // Load lesson cards
+  useEffect(() => {
+    const loadLessonCards = async () => {
+      try {
+        setLoadingLessonCards(true);
+        const cards = await cardService.getLessonCards(20); // Load first 20 lesson cards
+        setLessonCards(cards);
+      } catch (error) {
+        console.error('Error loading lesson cards:', error);
+      } finally {
+        setLoadingLessonCards(false);
+      }
+    };
+
+    loadLessonCards();
+  }, []);
 
   if (loading) {
     return (
@@ -135,6 +156,46 @@ export default function EducationScreen() {
             <Text style={styles.statNumber}>{completedLessonsCount}</Text>
             <Text style={styles.statLabel}>Lessons</Text>
           </View>
+        </View>
+
+        {/* Lesson Cards Section */}
+        <View style={styles.lessonCardsSection}>
+          <Text style={styles.sectionTitle}>Interactive Lessons</Text>
+          <Text style={styles.sectionSubtitle}>Swipe through audio lessons with real content</Text>
+          
+          {loadingLessonCards ? (
+            <View style={styles.lessonCardsLoading}>
+              <ActivityIndicator size="large" color="#2563eb" />
+              <Text style={styles.loadingText}>Loading lesson cards...</Text>
+            </View>
+          ) : lessonCards.length > 0 ? (
+            <View style={styles.lessonCardsContainer}>
+              {lessonCards.slice(0, 3).map((card, index) => (
+                <View key={card.id} style={styles.lessonCardWrapper}>
+                  <UnifiedCard data={card} />
+                </View>
+              ))}
+              {lessonCards.length > 3 && (
+                <TouchableOpacity 
+                  style={styles.viewAllButton}
+                  onPress={() => {
+                    // Navigate to a dedicated lesson cards screen
+                    router.push('/lesson-cards');
+                  }}
+                >
+                  <Text style={styles.viewAllButtonText}>
+                    View All {lessonCards.length} Lessons
+                  </Text>
+                  <MaterialCommunityIcons name="arrow-right" size={20} color="#2563eb" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View style={styles.noLessonCards}>
+              <MaterialCommunityIcons name="school" size={48} color="#9ca3af" />
+              <Text style={styles.noLessonCardsText}>No lesson cards available</Text>
+            </View>
+          )}
         </View>
 
         {/* Stages and Lessons */}
@@ -498,6 +559,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     marginLeft: 4,
+    fontFamily: 'Graphik-Regular',
+  },
+  lessonCardsSection: {
+    marginBottom: 20,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
+    fontFamily: 'Graphik-Regular',
+  },
+  lessonCardsLoading: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  lessonCardsContainer: {
+    gap: 12,
+  },
+  lessonCardWrapper: {
+    marginBottom: 12,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8fafc',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    marginTop: 8,
+  },
+  viewAllButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2563eb',
+    marginRight: 8,
+    fontFamily: 'Graphik-Semibold',
+  },
+  noLessonCards: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  noLessonCardsText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginTop: 12,
     fontFamily: 'Graphik-Regular',
   },
 });
