@@ -1,0 +1,118 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for dekr-nextgen
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAuthorizedUser() {
+      return isAuthenticated() || request.auth.uid == 'demo-user-123';
+    }
+    
+    // Lessons audio - public read access for all authenticated users and demo user
+    match /dekr-content/audio/lessons/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions can upload lessons
+    }
+    
+    // Podcasts audio - public read access
+    match /dekr-content/audio/podcasts/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    // Weekly podcasts - public read access
+    match /dekr-content/audio/weekly-podcasts/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    // Community podcasts - public read access
+    match /dekr-content/audio/community-podcasts/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    // Images folder - organized by content type
+    match /dekr-content/images/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    // Lesson thumbnails - public read access
+    match /dekr-content/images/lesson_thumbnails/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    // User avatars - user-specific access
+    match /dekr-content/images/user_avatars/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+        (isOwner(userId) || 
+         // Allow friends to see avatars
+         resource.metadata.friends != null);
+      allow write: if isOwner(userId);
+    }
+    
+    // Deck covers - public read access
+    match /dekr-content/images/deck_covers/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAuthenticated(); // Deck owners can upload covers
+    }
+    
+    // Legacy storage paths for backward compatibility
+    match /podcasts/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+    
+    match /weekly-podcasts/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    match /lesson-audio/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    match /user-uploads/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+    
+    match /community-content/{allPaths=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAuthenticated();
+    }
+    
+    // Temporary uploads - user-specific with expiration
+    match /temp-uploads/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+    
+    // Admin-only content
+    match /admin-content/{allPaths=**} {
+      allow read: if isAuthenticated() && 
+        request.auth.token.admin == true;
+      allow write: if isAuthenticated() && 
+        request.auth.token.admin == true;
+    }
+    
+    // Public assets - no authentication required
+    match /public-assets/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Only Cloud Functions
+    }
+  }
+}
