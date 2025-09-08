@@ -6,7 +6,7 @@ import { safeHapticImpact } from '../../utils/haptics';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useRouter } from 'expo-router';
 import { engagementTracker, CardType, InteractionAction } from '../services/EngagementTracker';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '../src/hooks/useAuth';
 
 interface NewsCardProps {
   data: UnifiedCard;

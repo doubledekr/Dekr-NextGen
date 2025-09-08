@@ -86,58 +86,9 @@ export default function ReactNativeAudioPlayer({ audioUrl, title, transcript, st
     }
   };
 
-  const loadAudioSource = async () => {
+  const loadAudioWithSource = async (source: any) => {
     try {
-      setIsLoading(true);
-      setRetryCount(0);
-
-      // Try to get audio source from Firebase Storage first if stage and lessonId are provided
-      if (stage && lessonId) {
-        console.log(`🔄 Loading audio from Firebase Storage for lesson ${stage}_${lessonId}`);
-        try {
-          const firebaseSource = await audioAssetManager.getLessonAudioAsset(stage, lessonId);
-          setAudioSource(firebaseSource);
-          console.log('✅ Firebase Storage audio source loaded');
-        } catch (firebaseError) {
-          console.warn('⚠️ Firebase Storage failed, falling back to local assets:', firebaseError);
-          // Fall through to local asset loading
-        }
-      }
-
-      // If no Firebase source or Firebase failed, try local assets
-      if (!audioSource) {
-        console.log('🔄 Loading audio from local assets');
-        const localSource = getAudioAsset(audioUrl);
-        
-        if (!localSource) {
-          throw new Error('No audio source available - neither Firebase Storage nor local assets found');
-        }
-        
-        setAudioSource(localSource);
-        console.log('✅ Local audio source loaded');
-      }
-
-      // Load the audio with the determined source
-      await loadAudio();
-      
-    } catch (error) {
-      console.error('❌ ReactNativeAudioPlayer: Error loading audio source:', error);
-      setIsLoading(false);
-      
-      // Retry logic
-      if (retryCount < maxRetries) {
-        console.log(`🔄 Retrying audio load (${retryCount + 1}/${maxRetries})`);
-        setRetryCount(prev => prev + 1);
-        setTimeout(() => {
-          loadAudioSource();
-        }, 1000 * (retryCount + 1)); // Exponential backoff
-      }
-    }
-  };
-
-  const loadAudio = async () => {
-    try {
-      if (!audioSource) {
+      if (!source) {
         throw new Error('No audio source available');
       }
 
@@ -162,7 +113,7 @@ export default function ReactNativeAudioPlayer({ audioUrl, title, transcript, st
       const createOptions = { shouldPlay: false };
       
       const { sound: newSound } = await Audio.Sound.createAsync(
-        audioSource,
+        source,
         createOptions,
         onPlaybackStatusUpdate
       );
@@ -170,6 +121,70 @@ export default function ReactNativeAudioPlayer({ audioUrl, title, transcript, st
       setSound(newSound);
       setIsLoading(false);
       console.log('✅ Audio loaded successfully');
+    } catch (error) {
+      console.error('❌ ReactNativeAudioPlayer: Error loading audio:', error);
+      setIsLoading(false);
+      throw error;
+    }
+  };
+
+  const loadAudioSource = async () => {
+    try {
+      setIsLoading(true);
+      setRetryCount(0);
+
+      let source = null;
+
+      // Try to get audio source from Firebase Storage first if stage and lessonId are provided
+      if (stage && lessonId) {
+        console.log(`🔄 Loading audio from Firebase Storage for lesson ${stage}_${lessonId}`);
+        try {
+          source = await audioAssetManager.getLessonAudioAsset(stage, lessonId);
+          console.log('✅ Firebase Storage audio source loaded');
+        } catch (firebaseError) {
+          console.warn('⚠️ Firebase Storage failed, falling back to local assets:', firebaseError);
+          // Fall through to local asset loading
+        }
+      }
+
+      // If no Firebase source or Firebase failed, try local assets
+      if (!source) {
+        console.log('🔄 Loading audio from local assets');
+        source = getAudioAsset(audioUrl);
+        
+        if (!source) {
+          throw new Error('No audio source available - neither Firebase Storage nor local assets found');
+        }
+        
+        console.log('✅ Local audio source loaded');
+      }
+
+      // Set the audio source and load the audio
+      setAudioSource(source);
+      await loadAudioWithSource(source);
+      
+    } catch (error) {
+      console.error('❌ ReactNativeAudioPlayer: Error loading audio source:', error);
+      setIsLoading(false);
+      
+      // Retry logic
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying audio load (${retryCount + 1}/${maxRetries})`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => {
+          loadAudioSource();
+        }, 1000 * (retryCount + 1)); // Exponential backoff
+      }
+    }
+  };
+
+  const loadAudio = async () => {
+    try {
+      if (!audioSource) {
+        throw new Error('No audio source available');
+      }
+
+      await loadAudioWithSource(audioSource);
     } catch (error) {
       console.error('❌ ReactNativeAudioPlayer: Error loading audio:', error);
       setIsLoading(false);

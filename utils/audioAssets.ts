@@ -1,8 +1,14 @@
 import StorageService from '../services/StorageService';
 
 // Audio asset mapping for React Native with Firebase Storage support
-export const getAudioAsset = (audioUrl: string) => {
+export const getAudioAsset = (audioUrl: string | number) => {
   console.log('🔊 getAudioAsset called with:', audioUrl);
+  
+  // Handle numeric asset IDs (from require() statements)
+  if (typeof audioUrl === 'number') {
+    console.log('🔊 Numeric asset ID detected, returning directly:', audioUrl);
+    return audioUrl;
+  }
   
   // Check if it's an external URL (http/https/blob) - Firebase Storage URLs
   if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://') || audioUrl.startsWith('blob:')) {
@@ -41,6 +47,7 @@ export const getAudioAsset = (audioUrl: string) => {
     'lesson_2_16.mp3': require('../assets/audio/lesson_2_16.mp3'),
     'Fashion Podcast Intro.mp3': require('../assets/audio/Fashion Podcast Intro.mp3'),
     'Podcast Intro.mp3': require('../assets/audio/Podcast Intro.mp3'),
+    'weekly-podcast.mp3': require('../assets/podcast/weekly-podcast.mp3'),
   };
   
   if (filename && audioAssets[filename]) {

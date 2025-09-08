@@ -130,12 +130,14 @@ export class WeeklyPodcastService {
     console.log('📊 Fetching weekly data for community podcast...');
     
     try {
-      // Fetch news, stocks, and crypto in parallel
-      const [news, stocks, crypto] = await Promise.all([
+      // Fetch news and stocks in parallel (skip crypto for now)
+      const [news, stocks] = await Promise.all([
         fetchPolygonFinancialNews(15), // Top 15 news articles
         getPolygonPopularStocks(10),   // Top 10 stocks
-        getPolygonPopularCrypto(5)     // Top 5 crypto
       ]);
+      
+      // Skip crypto requests - stocks only mode
+      const crypto: any[] = [];
 
       // Fetch community data
       const communityMembers = await this.fetchCommunityData();

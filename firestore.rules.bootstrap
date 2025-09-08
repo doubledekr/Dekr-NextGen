@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // BOOTSTRAP RULES: Allow authenticated users to create their own user documents
+    // Use these rules temporarily to bootstrap user document creation
+    
+    // Users collection - allow authenticated users to create their own documents
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow read access to public collections
+    match /cards/{cardId} {
+      allow read: if true; // Public read access
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    match /educationContent/{contentId} {
+      allow read: if true; // Public read access
+      allow write: if false; // Only Cloud Functions
+    }
+    
+    // Allow authenticated users to access other collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

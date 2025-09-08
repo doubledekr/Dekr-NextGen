@@ -29,17 +29,11 @@ async function getRandomMarketData(stockCount, cryptoCount, newsCount) {
                 console.error('❌ Polygon stocks failed:', error);
             }
         }
-        // 3. Get crypto from Polygon
+        // 3. Skip crypto requests for now - only stocks
         let cryptoData = [];
         if (cryptoCount > 0) {
-            try {
-                console.log('₿ Fetching crypto from Polygon API...');
-                cryptoData = await (0, polygon_service_1.getPolygonPopularCrypto)(cryptoCount);
-                console.log('✅ Got', cryptoData.length, 'crypto from Polygon');
-            }
-            catch (error) {
-                console.error('❌ Polygon crypto failed:', error);
-            }
+            console.log('₿ Skipping crypto requests - stocks only mode');
+            cryptoData = [];
         }
         // 4. Combine all data
         const combinedData = [...stockData, ...cryptoData, ...newsData];

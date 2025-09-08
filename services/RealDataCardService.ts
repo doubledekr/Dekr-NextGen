@@ -68,13 +68,14 @@ export class RealDataCardService {
   }
 
   /**
-   * Generate real crypto cards from Polygon API
+   * Generate real crypto cards from Polygon API (disabled - stocks only mode)
    */
   async generateRealCryptoCards(limit: number = 3): Promise<UnifiedCard[]> {
     try {
-      console.log('₿ Generating real crypto cards from Polygon API...');
+      console.log('₿ Skipping crypto cards - stocks only mode');
       
-      const cryptos = await getPolygonPopularCrypto(limit);
+      // Skip crypto requests for now
+      const cryptos: any[] = [];
       
       const cryptoCards: UnifiedCard[] = cryptos.map(crypto => ({
         id: `real-crypto-${crypto.symbol}`,

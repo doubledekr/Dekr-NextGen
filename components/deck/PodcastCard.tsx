@@ -5,7 +5,7 @@ import { UnifiedCard } from '../../services/CardService';
 import { safeHapticImpact } from '../../utils/haptics';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { engagementTracker, CardType, InteractionAction } from '../../services/EngagementTracker';
-import { useAuth } from '../../providers/AuthProvider';
+import { useAuth } from '../../src/hooks/useAuth';
 
 interface PodcastCardProps {
   data: UnifiedCard;

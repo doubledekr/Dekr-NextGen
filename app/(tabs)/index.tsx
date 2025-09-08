@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Share, Platform, Text, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Share, Platform, Text, TouchableOpacity, RefreshControl, Alert, Linking } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Swiper from 'react-native-deck-swiper';
 import { useTheme, FAB } from 'react-native-paper';
 import { UnifiedCard } from '../../components/UnifiedCard';
+import { HomePodcastCard } from '../../components/HomePodcastCard';
 import { NewsCardData } from '../../components/MarketCard';
 import { RootState } from '../../store/store';
 import { addToWatchlist, setWatchlistItems, removeFromWatchlist } from '../../store/slices/watchlistSlice';
@@ -135,6 +136,12 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isFetchingRef = useRef(false);
   const [currentPage, setCurrentPage] = useState(0);
+  
+  // Podcast card state
+  const [showPodcastCard, setShowPodcastCard] = useState(true);
+  const [podcastCardPosition, setPodcastCardPosition] = useState(0); // Position in the deck
+  const [swipeCount, setSwipeCount] = useState(0);
+  const PODCAST_RETURN_THRESHOLD = 10; // Return podcast after 10 swipes
   
   // Add cache state
   const [cardCache, setCardCache] = useState<CardCache>({
@@ -321,8 +328,42 @@ export default function HomeScreen() {
 
 
 
+  // Handle podcast card swipe behavior
+  const handlePodcastCardSwipe = () => {
+    setShowPodcastCard(false);
+    setPodcastCardPosition(cards.length); // Move to back of deck
+    setSwipeCount(0);
+    
+    // Log podcast card swipe event
+    logEvent(AnalyticsEvents.SWIPE_CARD, {
+      card_id: 'weekly-podcast',
+      card_type: 'podcast',
+      direction: 'away',
+    });
+  };
+
+  // Check if podcast should return to front
+  const checkPodcastReturn = () => {
+    setSwipeCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= PODCAST_RETURN_THRESHOLD) {
+        setShowPodcastCard(true);
+        setPodcastCardPosition(0);
+        return 0;
+      }
+      return newCount;
+    });
+  };
+
   const handleSwipeRight = async (cardIndex: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    // Handle podcast card swipe
+    if (showPodcastCard && cardIndex === 0) {
+      handlePodcastCardSwipe();
+      return;
+    }
+    
     const card = cards[cardIndex];
   
     if (user) {
@@ -380,10 +421,22 @@ export default function HomeScreen() {
     }
   
     setCards((prev) => prev.slice(1));
+    
+    // Check if podcast should return
+    if (!showPodcastCard) {
+      checkPodcastReturn();
+    }
   };
   
   const handleSwipeLeft = async (cardIndex: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    
+    // Handle podcast card swipe
+    if (showPodcastCard && cardIndex === 0) {
+      handlePodcastCardSwipe();
+      return;
+    }
+    
     const card = cards[cardIndex];
     
     if (activeDeck === 'watchlist' && user) {
@@ -405,10 +458,22 @@ export default function HomeScreen() {
     }
     
     setCards((prev) => prev.slice(1));
+    
+    // Check if podcast should return
+    if (!showPodcastCard) {
+      checkPodcastReturn();
+    }
   };
   
   const handleSwipeTop = async (cardIndex: number) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    // Handle podcast card swipe
+    if (showPodcastCard && cardIndex === 0) {
+      handlePodcastCardSwipe();
+      return;
+    }
+    
     const card = cards[cardIndex];
   
     try {
@@ -469,10 +534,21 @@ export default function HomeScreen() {
     } else {
       setCards((prev) => prev.slice(1));
     }
+    
+    // Check if podcast should return
+    if (!showPodcastCard) {
+      checkPodcastReturn();
+    }
   };
 
   const handleSwipeBottom = (cardIndex: number) => {
   safeHapticNotification();
+
+  // Handle podcast card swipe
+  if (showPodcastCard && cardIndex === 0) {
+    handlePodcastCardSwipe();
+    return;
+  }
 
   setCards(prev => {
     if (prev.length <= 1) return prev; // Avoid breaking on a single card
@@ -483,6 +559,11 @@ export default function HomeScreen() {
 
     return updatedDeck; // ✅ React will now treat it as the same array
     });
+    
+    // Check if podcast should return
+    if (!showPodcastCard) {
+      checkPodcastReturn();
+    }
   };
 
   const formatPercentage = (num?: number) => {
@@ -534,6 +615,14 @@ export default function HomeScreen() {
     }
   };
 
+  // Create combined cards array with podcast card
+  const combinedCards = React.useMemo(() => {
+    if (showPodcastCard) {
+      return ['podcast-card', ...cards];
+    }
+    return cards;
+  }, [showPodcastCard, cards]);
+
   if (isLoading && cards.length === 0) {
     return (
       <View style={styles.loadingContainer}>
@@ -573,9 +662,26 @@ export default function HomeScreen() {
       <View style={styles.swiperContainer}>
         <Swiper
           ref={swiperRef}
-          cards={cards}
-          key={cards.length}
-          renderCard={(card) => card ? <UnifiedCard data={card} /> : null}
+          cards={combinedCards}
+          key={combinedCards.length}
+          renderCard={(card) => {
+            if (card === 'podcast-card') {
+              return <HomePodcastCard 
+                onPlay={(audioUrl) => {
+                  // In-app audio player is now handled within HomePodcastCard
+                  console.log('Podcast play requested:', audioUrl);
+                }}
+                onGenerate={() => {
+                  // Handle podcast generation
+                  console.log('Generating new podcast');
+                }}
+                onSwipeAway={() => {
+                  handlePodcastCardSwipe();
+                }}
+              />;
+            }
+            return card ? <UnifiedCard data={card} /> : null;
+          }}
           onSwipedRight={handleSwipeRight}
           onSwipedLeft={handleSwipeLeft}
           onSwipedTop={handleSwipeTop}

@@ -296,7 +296,10 @@ export const ChallengeSubmissionCard: React.FC<ChallengeSubmissionCardProps> = (
             Submitted
           </Text>
           <Text style={[styles.detailValue, { color: theme.colors.onSurface }]}>
-            {card.submittedAt.toLocaleDateString()} at {card.submittedAt.toLocaleTimeString()}
+            {(() => {
+              const date = card.submittedAt?.toDate ? card.submittedAt.toDate() : new Date(card.submittedAt);
+              return `${date.toLocaleDateString()} at ${date.toLocaleTimeString()}`;
+            })()}
           </Text>
         </View>
 

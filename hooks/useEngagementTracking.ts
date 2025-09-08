@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { engagementTracker } from '../services/EngagementTracker';
 import { preferenceAnalyzer } from '../services/PreferenceAnalyzer';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '../src/hooks/useAuth';
 
 export function useEngagementTracking() {
   const { user } = useAuth();

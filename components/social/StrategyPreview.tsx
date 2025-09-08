@@ -172,7 +172,10 @@ export const StrategyPreview: React.FC<StrategyPreviewProps> = ({
               <View style={styles.metaItem}>
                 <Text style={styles.metaLabel}>Created</Text>
                 <Text style={styles.metaValue}>
-                  {strategy.createdAt.toLocaleDateString()}
+                  {(() => {
+                    const date = strategy.createdAt?.toDate ? strategy.createdAt.toDate() : new Date(strategy.createdAt);
+                    return date.toLocaleDateString();
+                  })()}
                 </Text>
               </View>
               <View style={styles.metaItem}>

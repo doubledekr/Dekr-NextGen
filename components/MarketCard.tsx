@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { logEvent, AnalyticsEvents } from '../services/analytics';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { engagementTracker, CardType, InteractionAction } from '../services/EngagementTracker';
-import { useAuth } from '../providers/AuthProvider';
+import { useAuth } from '../src/hooks/useAuth';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(width * 0.9, 380);
