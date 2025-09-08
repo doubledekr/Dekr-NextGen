@@ -289,7 +289,7 @@ export const createShareLink = onCall(
       const deepLink = `${baseUrl}/share/${linkCode}`;
       
       // For Firebase Dynamic Links (if implemented)
-      const dynamicLink = `https://dekr.page.link/?link=${encodeURIComponent(deepLink)}&apn=com.pittsdev.dekr&ibi=com.pittsdev.dekr`;
+      const dynamicLink = `https://dekr.page.link/?link=${encodeURIComponent(deepLink)}&apn=com.dekr.app&ibi=com.dekr.app`;
 
       logger.info(`Share link created for ${type}:${targetId}`, {
         shareId: shareRef.id,

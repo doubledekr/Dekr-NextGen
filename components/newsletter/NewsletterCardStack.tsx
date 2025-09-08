@@ -3,13 +3,12 @@ import {
   View,
   StyleSheet,
   Dimensions,
-  PanGestureHandler,
-  State,
   Animated,
   TouchableOpacity,
   Modal,
   ScrollView,
 } from 'react-native';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { Card, Text, Title, Paragraph, Icon, Button, Chip } from 'react-native-paper';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -30,6 +29,8 @@ export function NewsletterCardStack({ newsletters, onNewsletterAction }: Newslet
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedNewsletter, setSelectedNewsletter] = useState<Newsletter | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  
+  console.log('NewsletterCardStack received newsletters:', newsletters.length, newsletters);
   
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -272,6 +273,28 @@ export function NewsletterCardStack({ newsletters, onNewsletterAction }: Newslet
   }
 
   const currentNewsletter = newsletters[currentIndex];
+  
+  console.log('NewsletterCardStack render - currentIndex:', currentIndex, 'currentNewsletter:', currentNewsletter);
+
+  // If no current newsletter, show a simple fallback
+  if (!currentNewsletter) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.cardContainer}>
+          <Card style={[styles.newsletterCard, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content style={styles.cardContent}>
+              <Title style={[styles.newsletterTitle, { color: theme.colors.onSurface }]}>
+                No Newsletter Available
+              </Title>
+              <Paragraph style={{ color: theme.colors.onSurfaceVariant }}>
+                There are no newsletters to display at this time.
+              </Paragraph>
+            </Card.Content>
+          </Card>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>

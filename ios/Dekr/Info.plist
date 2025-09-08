@@ -27,8 +27,8 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.pittsdev.dekr</string>
-          <string>com.pittsdev.dekr</string>
+          <string>com.dekr.app</string>
+          <string>com.dekr.app</string>
         </array>
       </dict>
       <dict>

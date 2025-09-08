@@ -237,7 +237,7 @@ exports.createShareLink = (0, https_1.onCall)({
         const baseUrl = 'https://dekr.app'; // Replace with your actual domain
         const deepLink = `${baseUrl}/share/${linkCode}`;
         // For Firebase Dynamic Links (if implemented)
-        const dynamicLink = `https://dekr.page.link/?link=${encodeURIComponent(deepLink)}&apn=com.pittsdev.dekr&ibi=com.pittsdev.dekr`;
+        const dynamicLink = `https://dekr.page.link/?link=${encodeURIComponent(deepLink)}&apn=com.dekr.app&ibi=com.dekr.app`;
         firebase_functions_1.logger.info(`Share link created for ${type}:${targetId}`, {
             shareId: shareRef.id,
             linkCode,

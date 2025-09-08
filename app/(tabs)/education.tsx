@@ -198,84 +198,225 @@ export default function EducationScreen() {
           )}
         </View>
 
-        {/* Stages and Lessons */}
+        {/* Learning Path Decks */}
         <View style={styles.stagesContainer}>
-          <Text style={styles.sectionTitle}>Learning Stages</Text>
+          <Text style={styles.sectionTitle}>Learning Path Decks</Text>
+          <Text style={styles.sectionSubtitle}>Master financial concepts through structured learning decks</Text>
           
-          {stages.map((stage) => (
-            <View key={stage.id} style={styles.stageContainer}>
-              <View style={styles.stageHeader}>
-                <View style={styles.stageInfo}>
-                  <Text style={styles.stageCardTitle}>{stage.title}</Text>
-                  <Text style={styles.stageCardDescription}>{stage.description}</Text>
-                </View>
-                <View style={styles.progressContainer}>
-                  <Text style={styles.progressText}>
-                    {Math.round(getStageProgress(stage.id))}%
-                  </Text>
-                  <View style={styles.stageProgressBar}>
-                    <View 
+          {stages.map((stage) => {
+            const progress = getStageProgress(stage.id);
+            const completedCount = stage.lessons.filter(lesson => 
+              isLessonCompleted(stage.id, lesson.id)
+            ).length;
+            const totalDuration = stage.lessons.reduce((total, lesson) => total + lesson.duration, 0);
+            const totalXP = stage.lessons.reduce((total, lesson) => total + lesson.xpReward, 0);
+            const audioLessons = stage.lessons.filter(lesson => 
+              lesson.content.some(c => c.type === 'audio')
+            ).length;
+
+            // Get stage colors
+            const getStageColors = (stageId: number) => {
+              switch (stageId) {
+                case 1:
+                  return {
+                    background: '#E3F2FD',
+                    ribbon: '#1976D2',
+                    ribbonText: '#FFFFFF',
+                    text: '#0D47A1',
+                    stats: '#BBDEFB',
+                  };
+                case 2:
+                  return {
+                    background: '#E8F5E8',
+                    ribbon: '#388E3C',
+                    ribbonText: '#FFFFFF',
+                    text: '#1B5E20',
+                    stats: '#C8E6C9',
+                  };
+                case 3:
+                  return {
+                    background: '#FFF3E0',
+                    ribbon: '#F57C00',
+                    ribbonText: '#FFFFFF',
+                    text: '#E65100',
+                    stats: '#FFE0B2',
+                  };
+                default:
+                  return {
+                    background: '#F3E5F5',
+                    ribbon: '#9C27B0',
+                    ribbonText: '#FFFFFF',
+                    text: '#4A148C',
+                    stats: '#E1BEE7',
+                  };
+              }
+            };
+
+            const colors = getStageColors(stage.id);
+
+            return (
+              <View key={stage.id} style={styles.cardPileContainer}>
+                {/* Card Pile - shows 3-4 cards stacked */}
+                <TouchableOpacity
+                  style={styles.cardPileWrapper}
+                  onPress={() => {
+                    router.push({
+                      pathname: '/StageDeckScreen',
+                      params: { stageId: stage.id.toString() }
+                    });
+                  }}
+                >
+                  {/* Background cards (2-3 cards behind) */}
+                  {[1, 2, 3].map((offset) => (
+                    <View
+                      key={`bg-${stage.id}-${offset}`}
                       style={[
-                        styles.stageProgressFill, 
-                        { width: `${getStageProgress(stage.id)}%` }
-                      ]} 
-                    />
+                        styles.cardBackground,
+                        {
+                          transform: [
+                            { translateY: offset * 4 },
+                            { scale: 1 - offset * 0.05 },
+                          ],
+                          zIndex: 10 - offset,
+                        },
+                      ]}
+                    >
+                      <View style={[styles.stageCardArchetype, { backgroundColor: colors.background }]}>
+                        <View style={styles.cardContent}>
+                          {/* Corner Banner */}
+                          <View style={[styles.cornerLabel, { backgroundColor: colors.ribbon }]}>
+                            <Text style={[styles.cornerLabelText, { color: colors.ribbonText }]}>
+                              STAGE {stage.id}
+                            </Text>
+                          </View>
+
+                          {/* Type Icon */}
+                          <View style={styles.typeIconContainer}>
+                            <MaterialCommunityIcons
+                              name="school"
+                              size={32}
+                              color={colors.text}
+                            />
+                          </View>
+
+                          {/* Title */}
+                          <View style={styles.nameContainer}>
+                            <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+                              {stage.title}
+                            </Text>
+                          </View>
+
+                          {/* Description badge */}
+                          <View style={styles.weekBadge}>
+                            <Text style={[styles.weekText, { color: colors.text }]}>
+                              {stage.description}
+                            </Text>
+                          </View>
+
+                          {/* Progress section */}
+                          <View style={styles.progressSection}>
+                            <View style={styles.progressRow}>
+                              <Text style={[styles.progressText, { color: colors.text }]}>
+                                {Math.round(progress)}% Complete
+                              </Text>
+                              <Text style={[styles.progressText, { color: colors.text }]}>
+                                {completedCount} of {stage.lessons.length} lessons
+                              </Text>
+                            </View>
+                            <View style={[styles.progressBar, { backgroundColor: colors.stats }]}>
+                              <View 
+                                style={[
+                                  styles.progressFill, 
+                                  { 
+                                    width: `${progress}%`,
+                                    backgroundColor: colors.ribbon
+                                  }
+                                ]} 
+                              />
+                            </View>
+                          </View>
+
+                          {/* Stats container */}
+                          <View style={[styles.statsContainer, { backgroundColor: colors.stats }]}>
+                            <View style={styles.stageInfo}>
+                              <MaterialCommunityIcons name="clock" size={20} color={colors.text} />
+                              <Text style={[styles.stageStats, { color: colors.text }]}>
+                                {totalDuration} min total
+                              </Text>
+                              <MaterialCommunityIcons name="cards" size={20} color={colors.text} />
+                              <Text style={[styles.stageStats, { color: colors.text }]}>
+                                {stage.lessons.length} lessons
+                              </Text>
+                              <MaterialCommunityIcons name="star" size={20} color="#fbbf24" />
+                              <Text style={[styles.stageStats, { color: colors.text }]}>
+                                {totalXP} XP
+                              </Text>
+                              <MaterialCommunityIcons name="headphones" size={20} color={colors.text} />
+                              <Text style={[styles.stageStats, { color: colors.text }]}>
+                                {audioLessons} with audio
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Action Button */}
+                          <TouchableOpacity 
+                            style={[styles.startButton, { backgroundColor: colors.ribbon }]}
+                            onPress={() => {
+                              router.push({
+                                pathname: '/StageDeckScreen',
+                                params: { stageId: stage.id.toString() }
+                              });
+                            }}
+                          >
+                            <MaterialCommunityIcons name="play" size={20} color={colors.ribbonText} />
+                            <Text style={[styles.startButtonText, { color: colors.ribbonText }]}>
+                              Start Learning Deck
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </TouchableOpacity>
+
+                {/* Stage Info Below Pile */}
+                <View style={styles.stageInfoContainer}>
+                  <Text style={[styles.stageInfoTitle, { color: colors.text }]}>
+                    {stage.title}
+                  </Text>
+                  <Text style={[styles.stageInfoDescription, { color: colors.text }]}>
+                    {stage.description}
+                  </Text>
+                  <View style={styles.stageInfoStats}>
+                    <View style={styles.stageInfoStat}>
+                      <MaterialCommunityIcons name="cards" size={16} color={colors.text} />
+                      <Text style={[styles.stageInfoStatText, { color: colors.text }]}>
+                        {stage.lessons.length} lessons
+                      </Text>
+                    </View>
+                    <View style={styles.stageInfoStat}>
+                      <MaterialCommunityIcons name="clock-outline" size={16} color={colors.text} />
+                      <Text style={[styles.stageInfoStatText, { color: colors.text }]}>
+                        {totalDuration} min total
+                      </Text>
+                    </View>
+                    <View style={styles.stageInfoStat}>
+                      <MaterialCommunityIcons name="star" size={16} color="#fbbf24" />
+                      <Text style={[styles.stageInfoStatText, { color: colors.text }]}>
+                        {totalXP} XP
+                      </Text>
+                    </View>
+                    <View style={styles.stageInfoStat}>
+                      <MaterialCommunityIcons name="headphones" size={16} color={colors.text} />
+                      <Text style={[styles.stageInfoStatText, { color: colors.text }]}>
+                        {audioLessons} with audio
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
-
-              <View style={styles.lessonsContainer}>
-                {stage.lessons.map((lesson) => {
-                  const completed = isLessonCompleted(stage.id, lesson.id);
-
-                  return (
-                    <TouchableOpacity
-                      key={lesson.id}
-                      style={[
-                        styles.lessonCard,
-                        completed && styles.lessonCardCompleted,
-                      ]}
-                      onPress={() => handleLessonPress(stage.id, lesson.id)}
-                    >
-                      <View style={styles.lessonIcon}>
-                        {completed ? (
-                          <MaterialCommunityIcons name="check-circle" size={32} color="#10b981" />
-                        ) : (
-                          <MaterialCommunityIcons name="play-circle" size={32} color="#2563eb" />
-                        )}
-                      </View>
-
-                      <View style={styles.lessonContent}>
-                        <Text style={styles.lessonTitle}>
-                          {lesson.title}
-                        </Text>
-                        <Text style={styles.lessonDescription}>
-                          {lesson.description}
-                        </Text>
-                        
-                        <View style={styles.lessonMeta}>
-                          <View style={styles.metaItem}>
-                            <MaterialCommunityIcons name="clock-outline" size={16} color="#6b7280" />
-                            <Text style={styles.metaText}>{lesson.duration} min</Text>
-                          </View>
-                          <View style={styles.metaItem}>
-                            <MaterialCommunityIcons name="star" size={16} color="#fbbf24" />
-                            <Text style={styles.metaText}>{lesson.xpReward} XP</Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      <MaterialCommunityIcons 
-                        name="chevron-right" 
-                        size={24} 
-                        color={lesson.isLocked ? "#d1d5db" : "#6b7280"} 
-                      />
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
     </View>
@@ -612,5 +753,203 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 12,
     fontFamily: 'Graphik-Regular',
+  },
+  // Archetype Stage Card Styles - matches podcast/newsletter exactly
+  stageCardArchetype: {
+    width: Math.min(width * 0.9, 380),
+    height: Math.min(Math.min(width * 0.9, 380) * 1.5, Dimensions.get('window').height * 0.65),
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    borderRadius: 10,
+    overflow: 'hidden',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  cardContent: {
+    flex: 1,
+    position: 'relative',
+  },
+  // Corner Banner - matches archetype exactly
+  cornerLabel: {
+    position: 'absolute',
+    top: 25,
+    left: -48,
+    transform: [
+      { rotate: '-45deg' },
+    ],
+    width: 190,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 5,
+    zIndex: 10,
+  },
+  cornerLabelText: {
+    fontFamily: 'Graphik-Medium',
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  // Type icon container - matches archetype
+  typeIconContainer: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Name container - matches archetype
+  nameContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+  },
+  // Name styling - matches archetype
+  name: {
+    fontFamily: 'AustinNewsDeck-Bold',
+    fontSize: 24,
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  // Week badge - matches archetype
+  weekBadge: {
+    position: 'absolute',
+    top: 120,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+  },
+  weekText: {
+    fontFamily: 'Graphik-Medium',
+    fontSize: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    textAlign: 'center',
+  },
+  // Progress section
+  progressSection: {
+    position: 'absolute',
+    top: 160,
+    left: 20,
+    right: 20,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+  },
+  // Stats container - matches archetype
+  statsContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    padding: 16,
+  },
+  stageInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  stageStats: {
+    fontFamily: 'Graphik-Medium',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Start button
+  startButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  startButtonText: {
+    fontFamily: 'Graphik-Medium',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Card Pile Container Styles
+  cardPileContainer: {
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  cardPileWrapper: {
+    position: 'relative',
+    height: Math.min(Math.min(width * 0.9, 380) * 1.5, Dimensions.get('window').height * 0.65) + 20,
+    width: Math.min(width * 0.9, 380) + 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardBackground: {
+    position: 'absolute',
+    width: Math.min(width * 0.9, 380),
+    height: Math.min(Math.min(width * 0.9, 380) * 1.5, Dimensions.get('window').height * 0.65),
+  },
+  // Stage Info Below Pile
+  stageInfoContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  stageInfoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontFamily: 'AustinNewsDeck-Bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  stageInfoDescription: {
+    fontSize: 14,
+    fontFamily: 'Graphik-Regular',
+    marginBottom: 16,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  stageInfoStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  stageInfoStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  stageInfoStatText: {
+    fontSize: 12,
+    fontFamily: 'Graphik-Medium',
   },
 });

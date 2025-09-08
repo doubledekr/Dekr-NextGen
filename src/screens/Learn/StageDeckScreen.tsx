@@ -10,7 +10,7 @@ import {
 import { useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useLocalSearchParams, router } from 'expo-router';
-import { LessonDeck } from '../../../components/deck';
+import { LessonCardPile } from '../../../components/deck/LessonCardPile';
 import { LessonCard, DeckProgress } from '../../../types/deck';
 import { Stage } from '../../../types/education';
 import { useEducation } from '../../../contexts/EducationContext';
@@ -287,13 +287,13 @@ export function StageDeckScreen() {
         </View>
       </View>
 
-      {/* Deck */}
+      {/* Card Pile */}
       <View style={styles.deckContainer}>
-        <LessonDeck
+        <LessonCardPile
           cards={lessonCards}
+          stageId={stage.id}
           onDeckComplete={handleDeckComplete}
           onCardComplete={handleCardComplete}
-          initialProgress={deckProgress}
         />
       </View>
     </View>
