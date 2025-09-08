@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>699983094686-ed7fniqgttl7di83b2h4ksq024slsrnr.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.699983094686-ed7fniqgttl7di83b2h4ksq024slsrnr</string>
+	<key>API_KEY</key>
+	<string>AIzaSyArL1JXQXBz0Tex4ToVCEZTvrJqgiq2wMA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>699983094686</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.dekr.app</string>
+	<key>PROJECT_ID</key>
+	<string>dekr-nextgen</string>
+	<key>STORAGE_BUCKET</key>
+	<string>dekr-nextgen.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:699983094686:ios:41d99e425e9833cafbec8f</string>
+</dict>
+</plist>
